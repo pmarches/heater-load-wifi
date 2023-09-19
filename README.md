@@ -12,7 +12,7 @@ The device has features that I could not find in commercial devices;
 
 ![perfboard](/media/perfboard_v1.jpg)
 ![enclosure](/media/enclosure_v1.jpg)
-![schematics](/media/electronic_load_schematics.png)
+![schematics](/media/schematics_v1.png)
 
 Use case
 ---

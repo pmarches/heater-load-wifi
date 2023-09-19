@@ -1,0 +1,4 @@
+(fp_lib_table
+  (lib (name "Library")(type "KiCad")(uri "/home/pmarches/projects/marine_is/solar_load_probe/doc/kicad_symbols/Library.pretty")(options "")(descr ""))
+  (lib (name "esp-wroom-32")(type "KiCad")(uri "/home/pmarches/projects/marine_is/solar_load_probe/doc/kicad_symbols/esp-wroom-32.pretty")(options "")(descr ""))
+)
