@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<HTML lang="en">
+<script>
+
+function saveSettings(){
+    var xmlhttp = new XMLHttpRequest();
+    var settings_form = document.getElementById('settings_form');
+    var formData = new FormData(settings_form);
+    var jsonToSend=JSON.stringify(Object.fromEntries(formData));
+
+    xmlhttp.open("POST", "/state", true);
+    xmlhttp.setRequestHeader("Content-Type", "application/json");
+    xmlhttp.send(jsonToSend);
+}
+
+function populateFormDataFromJSON(jsonString){
+    var jsonObj=JSON.parse(jsonString);
+    for (const [key, value] of Object.entries(jsonObj)) {
+        var formElement=document.getElementById(key);
+        if(formElement){
+            formElement.value=value;
+        }
+    }
+}
+
+function initFormData(){
+    if(window.location.origin=="file://"){
+        populateFormDataFromJSON('{ "onPhaseCount": 11, "offPhaseCount": 37, "wifissid": "Landlubber", "loadWatts": 100, "targetWatts": 23 }');
+        return; 
+    }
+    
+    const xmlhttp = new XMLHttpRequest();
+    xmlhttp.onreadystatechange = function() {
+        if (this.readyState == 4 && this.status == 200) {
+            populateFormDataFromJSON(xmlhttp.responseText);
+        }
+    };
+    xmlhttp.open("GET", "/state");
+    xmlhttp.send();
+}
+
+</script>
+
+<body onload="initFormData()">
+    <b>Settings</b><br>
+    <form method='POST' id='settings_form'>
+        <label for="wifissid">Wifi SSID</label>
+        <input type='text' name='wifissid' id='wifissid'>
+
+        <br>
+        <label for="wifipassword">Wifi Password</label>
+        <input type='text' name='wifipassword' id='wifipassword'>
+
+        <br>
+        <label for="loadWatts">Load attached (Watts)</label>
+        <input type='text' name='loadWatts' id='loadWatts'>
+        <br>
+        <input type='button' onclick="saveSettings()" value='Save'>
+    </form>
+    
+    <br><b>Firmware update</b><br>
+    <form method='POST' action='/updateFirmware' enctype='multipart/form-data' id='ota_form'>
+        <br>
+        Select .bin file from Arduino->Sketch->Export Binary.
+        <br>
+        Then Sketch->Show Sketch Folder. 
+        <br>
+        Doing a OTA will reset the preferences thus the device will not automatically connect to your wifi. You will need to reconfigure it using the device generated access point named "heater load configuration AP".
+        <br>
+        <br>
+        <input type='file' name='update' id='file'>
+        <input type='submit' value='Update'>
+    </form>
+
+</body>
+</HTML>
