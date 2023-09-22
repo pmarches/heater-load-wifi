@@ -6,8 +6,9 @@
 #include <Preferences.h>
 
 extern Preferences prefs;
-extern float triacTemperatureSensor;
-extern float externalTemperatureSensor;
+void getTemperatureReadings(float& triac, float& external);
+void setKnownCompensationTemperatureTriac(float knownCurrentTempTriac);
+
 extern "C" unsigned char settings_html[];
 extern "C" unsigned int settings_html_len;
 
@@ -134,6 +135,10 @@ void handleJsonCommand(JsonDocument* jsonReq) {
     prefs.putString("wifipassword", wifiPassword.as<const char*>());
   }
 
+  JsonVariant triacTemperatureSensor = topObject["triacTemperatureSensor"];
+  if(!triacTemperatureSensor.isNull()){
+    setKnownCompensationTemperatureTriac(triacTemperatureSensor);
+  }
 }
 
 void handleStateChange() {
@@ -159,8 +164,12 @@ void handleStateChange() {
   root["wifissid"] = prefs.getString("wifissid");
   root["loadWatts"] = prefs.getInt("loadWatts");
   root["targetWatts"] = getTargetWatts();
-  root["triacTemperatureSensor"]=triacTemperatureSensor;
-  root["externalTemperatureSensor"]=externalTemperatureSensor;
+
+  float triacTemp=NAN;
+  float externalTemp=NAN;
+  getTemperatureReadings(triacTemp, externalTemp);
+  root["triacTemperatureSensor"]=triacTemp;
+  root["externalTemperatureSensor"]=externalTemp;
 
   String jsonBytes;
   serializeJsonPretty(jsonResponse, jsonBytes);

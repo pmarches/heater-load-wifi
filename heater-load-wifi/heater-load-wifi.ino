@@ -8,9 +8,10 @@ void initMDNS();
 
 void initHttp();
 void handleHttpClients();
-void updateTemperatureReadings();
+void readTemperatureFromSensors();
 
 void initPWM();
+void initTemperature();
 
 void setup() {
   Serial.begin(115200);
@@ -20,11 +21,12 @@ void setup() {
   initMDNS();
   initHttp();
 
+  initTemperature();
   initPWM();
 }
 
 void loop(){
-  updateTemperatureReadings();
+  readTemperatureFromSensors();
   handleHttpClients();
   delay(100);
 }

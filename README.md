@@ -37,18 +37,35 @@ The device has a JSON API on the URL : http://esp32-XXXXXX.local/state the respo
 }
 ```
 
+The device also has a over the air update mechanism. You can point your browser to the web interface and upload a new firmware.
+
+Victron Operation
+---
+TBD
+
+Temperature calibration
+----
+Get the current known temperature from the UI, then record the "ratio" to the current reading. Apply that ratio to all readings. Default ratio is 1.0.
 
 Electrical details
 ---
 We use a TRIAC along with a TRIAC driver to select a certain count of phases from mains AC power.  This avoids the sharp voltage spikes typically associated with TRIACs driven by PWM. This should result in low electrical noise, and low heat loss from the TRIAC. 
 
+The external temperature sensor is just a NTC 10K thermistor with a JST 2.0mm 2 pin connector. 
+
+BOM
+---
+TBD
 
 TODO
 ---
+- [ ] Add temperature limit
+- [ ] Test with higher loads
 - [ ] Low power mode
-- [ ] 50Hz
-- [ ]  Test on inverter
-- [ ]  Monitor TRIAC temperature. Shutdown if too hot.
-- [ ]  If cannot connect to AP after a few minutes, it should fallback to the temporary AP, to allow re-configuration.
-- [ ]  Security
-- [ ]  Reduce size of device with printed PCB. Modify enclosure
+- [ ] Autodetect AC frequency at boot time. Sanity checks for 60Hz
+- [ ] Make compatible with 50HZ AC mains. Can it work on 220V ?
+- [ ] Test on inverter
+- [ ] Monitor TRIAC temperature. Shutdown if too hot.
+- [ ] If cannot connect to AP after a few minutes, it should fallback to the temporary AP, to allow re-configuration.
+- [ ] Secure configuration page with password.
+- [ ] Reduce size of device with printed PCB. Modify enclosure

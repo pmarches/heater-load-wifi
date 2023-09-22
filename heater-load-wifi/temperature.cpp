@@ -1,4 +1,7 @@
 #include <Arduino.h>
+#include <Preferences.h>
+
+extern Preferences prefs;
 
 // resistance at 25 degrees C
 #define THERMISTORNOMINAL 10000      
@@ -12,8 +15,22 @@
 // the value of the 'other' resistor
 #define SERIESRESISTOR 10000  
 
-float triacTemperatureSensor=NAN;
-float externalTemperatureSensor=NAN;
+struct {
+  int gpioPin;
+  float temperatureReadingNonCompensated;
+  float compensationFactor;
+} temperatureSensors[2] = {
+  {
+    .gpioPin=32,
+    .temperatureReadingNonCompensated=NAN,
+    .compensationFactor=NAN,
+  },
+  {
+    .gpioPin=33,
+    .temperatureReadingNonCompensated=NAN,
+    .compensationFactor=NAN,
+  }
+};
 
 float readTemperature(int gpioPin){
     //analogRead yields a 12bit number (0-4095)
@@ -37,7 +54,28 @@ float readTemperature(int gpioPin){
   return steinhart;
 }
 
-void updateTemperatureReadings(){
-  triacTemperatureSensor=readTemperature(32);
-  externalTemperatureSensor=readTemperature(33);
+void readTemperatureFromSensors(){
+  temperatureSensors[0].temperatureReadingNonCompensated=readTemperature(temperatureSensors[0].gpioPin);
+  temperatureSensors[1].temperatureReadingNonCompensated=readTemperature(temperatureSensors[1].gpioPin);
+}
+
+#define TEMP_COMPENSATION_FACTOR0 "tempCompensationFactor0"
+#define TEMP_COMPENSATION_FACTOR1 "tempCompensationFactor1"
+
+void setKnownCompensationTemperatureTriac(float knownCurrentTempTriac){
+  temperatureSensors[0].compensationFactor=knownCurrentTempTriac/temperatureSensors[0].temperatureReadingNonCompensated;
+  Serial.printf("compensationFactor=%f\n", temperatureSensors[0].compensationFactor);
+  prefs.putFloat(TEMP_COMPENSATION_FACTOR0, temperatureSensors[0].compensationFactor);
+}
+
+void initTemperature(){
+  temperatureSensors[0].compensationFactor=prefs.getFloat(TEMP_COMPENSATION_FACTOR0, 1.0);
+  Serial.printf("temperatureSensors[0].compensationFactor=%f\n", temperatureSensors[0].compensationFactor);
+  temperatureSensors[1].compensationFactor=prefs.getFloat(TEMP_COMPENSATION_FACTOR1, 1.0);
+  Serial.printf("temperatureSensors[1].compensationFactor=%f\n", temperatureSensors[1].compensationFactor);
+}
+
+void getTemperatureReadings(float& triacTemp, float& externalTemp){
+  triacTemp=temperatureSensors[0].temperatureReadingNonCompensated*temperatureSensors[0].compensationFactor;
+  externalTemp=temperatureSensors[1].temperatureReadingNonCompensated*temperatureSensors[1].compensationFactor;
 }
