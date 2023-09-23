@@ -3,6 +3,9 @@
 
 extern Preferences prefs;
 
+#define PREFKEY_TEMP_COMPENSATION_FACTOR0 "tempCompensationFactor0"
+#define PREFKEY_TEMP_COMPENSATION_FACTOR1 "tempCompensationFactor1"
+
 // resistance at 25 degrees C
 #define THERMISTORNOMINAL 10000      
 // temp. for nominal resistance (almost always 25 C)
@@ -19,16 +22,19 @@ struct {
   int gpioPin;
   float temperatureReadingNonCompensated;
   float compensationFactor;
+  float temperatureLimit;
 } temperatureSensors[2] = {
   {
     .gpioPin=32,
     .temperatureReadingNonCompensated=NAN,
     .compensationFactor=NAN,
+    .temperatureLimit=NAN,
   },
   {
     .gpioPin=33,
     .temperatureReadingNonCompensated=NAN,
     .compensationFactor=NAN,
+    .temperatureLimit=NAN,
   }
 };
 
@@ -54,28 +60,46 @@ float readTemperature(int gpioPin){
   return steinhart;
 }
 
-void readTemperatureFromSensors(){
-  temperatureSensors[0].temperatureReadingNonCompensated=readTemperature(temperatureSensors[0].gpioPin);
-  temperatureSensors[1].temperatureReadingNonCompensated=readTemperature(temperatureSensors[1].gpioPin);
+
+float getCompensatedTemperatureReading(int sensorIndex){
+  return temperatureSensors[sensorIndex].temperatureReadingNonCompensated*temperatureSensors[sensorIndex].compensationFactor;
 }
 
-#define TEMP_COMPENSATION_FACTOR0 "tempCompensationFactor0"
-#define TEMP_COMPENSATION_FACTOR1 "tempCompensationFactor1"
+void getTemperatureReadings(float& triacTemp, float& externalTemp){
+  triacTemp=getCompensatedTemperatureReading(0);
+  externalTemp=getCompensatedTemperatureReading(1);
+}
+
+bool isTemperatureOverlimit(int sensorIndex){
+  if(getCompensatedTemperatureReading(sensorIndex)>temperatureSensors[sensorIndex].temperatureLimit){
+    return true;
+  }
+  return false;
+}
+
+void readTemperatureFromSensors(){
+  bool needToCooldown=false;
+  for(int i=0; i<2; i++){
+    temperatureSensors[i].temperatureReadingNonCompensated=readTemperature(temperatureSensors[i].gpioPin);
+    if(isTemperatureOverlimit(i)){
+      needToCooldown=true;
+    }
+  }
+
+  if(needToCooldown){
+    
+  }
+}
 
 void setKnownCompensationTemperatureTriac(float knownCurrentTempTriac){
   temperatureSensors[0].compensationFactor=knownCurrentTempTriac/temperatureSensors[0].temperatureReadingNonCompensated;
   Serial.printf("compensationFactor=%f\n", temperatureSensors[0].compensationFactor);
-  prefs.putFloat(TEMP_COMPENSATION_FACTOR0, temperatureSensors[0].compensationFactor);
+  prefs.putFloat(PREFKEY_TEMP_COMPENSATION_FACTOR0, temperatureSensors[0].compensationFactor);
 }
 
 void initTemperature(){
-  temperatureSensors[0].compensationFactor=prefs.getFloat(TEMP_COMPENSATION_FACTOR0, 1.0);
+  temperatureSensors[0].compensationFactor=prefs.getFloat(PREFKEY_TEMP_COMPENSATION_FACTOR0, 1.0);
   Serial.printf("temperatureSensors[0].compensationFactor=%f\n", temperatureSensors[0].compensationFactor);
-  temperatureSensors[1].compensationFactor=prefs.getFloat(TEMP_COMPENSATION_FACTOR1, 1.0);
+  temperatureSensors[1].compensationFactor=prefs.getFloat(PREFKEY_TEMP_COMPENSATION_FACTOR1, 1.0);
   Serial.printf("temperatureSensors[1].compensationFactor=%f\n", temperatureSensors[1].compensationFactor);
-}
-
-void getTemperatureReadings(float& triacTemp, float& externalTemp){
-  triacTemp=temperatureSensors[0].temperatureReadingNonCompensated*temperatureSensors[0].compensationFactor;
-  externalTemp=temperatureSensors[1].temperatureReadingNonCompensated*temperatureSensors[1].compensationFactor;
 }
