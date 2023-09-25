@@ -14,6 +14,7 @@ uint32_t targetWatts=0;
 #define SYNC_CYCLE_COUNT 60  //60=Sync the waves once per second on 60Hz
 
 unsigned long previousPhaseTS = 0;
+bool isOverTemperature();
 
 void onACPhaseDetected() {
   unsigned long now = micros();
@@ -38,7 +39,7 @@ void configurePhaseDetectQueue() {
 
 //The total time taken by this function must not exceed FULL_PERIOD_US*SYNC_CYCLE_COUNT
 void playPulseTrain() {
-  if (0 == highPulseTarget) {
+  if (isOverTemperature() || 0 == highPulseTarget) {
     digitalWrite(PWM_PIN, LOW);
     return;
   }

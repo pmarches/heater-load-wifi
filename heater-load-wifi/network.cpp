@@ -7,7 +7,10 @@
 
 extern Preferences prefs;
 void getTemperatureReadings(float& triac, float& external);
+void getTemperatureLimits(float& triacTempLimit, float& externalTempLimit);
+void setTemperatureLimits(int sensorIndex, float tempLimit);
 void setKnownCompensationTemperatureTriac(float knownCurrentTempTriac);
+bool isOverTemperature();
 
 extern "C" unsigned char settings_html[];
 extern "C" unsigned int settings_html_len;
@@ -139,6 +142,16 @@ void handleJsonCommand(JsonDocument* jsonReq) {
   if(!triacTemperatureSensor.isNull()){
     setKnownCompensationTemperatureTriac(triacTemperatureSensor);
   }
+
+  JsonVariant triacTemperatureLimit = topObject["triacTemperatureLimit"];
+  if(!triacTemperatureLimit.isNull()){
+    setTemperatureLimits(0, triacTemperatureLimit);
+  }
+
+  JsonVariant externalTemperatureLimit = topObject["externalTemperatureLimit"];
+  if(!externalTemperatureLimit.isNull()){
+    setTemperatureLimits(1, externalTemperatureLimit);
+  }
 }
 
 void handleStateChange() {
@@ -168,8 +181,17 @@ void handleStateChange() {
   float triacTemp=NAN;
   float externalTemp=NAN;
   getTemperatureReadings(triacTemp, externalTemp);
+  float triacTempLimit=NAN;
+  float externalTempLimit=NAN;
+  getTemperatureLimits(triacTempLimit, externalTempLimit);
+
   root["triacTemperatureSensor"]=triacTemp;
+  root["triacTemperatureLimit"]=triacTempLimit;
+
   root["externalTemperatureSensor"]=externalTemp;
+  root["externalTemperatureLimit"]=externalTempLimit;
+
+  root["isOverTemperatureLimit"]=isOverTemperature();
 
   String jsonBytes;
   serializeJsonPretty(jsonResponse, jsonBytes);

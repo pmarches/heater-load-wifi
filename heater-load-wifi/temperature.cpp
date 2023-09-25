@@ -5,6 +5,8 @@ extern Preferences prefs;
 
 #define PREFKEY_TEMP_COMPENSATION_FACTOR0 "tempCompensationFactor0"
 #define PREFKEY_TEMP_COMPENSATION_FACTOR1 "tempCompensationFactor1"
+#define PREFKEY_TEMP_LIMIT0 "tempLimit0"
+#define PREFKEY_TEMP_LIMIT1 "tempLimit1"
 
 // resistance at 25 degrees C
 #define THERMISTORNOMINAL 10000      
@@ -70,7 +72,29 @@ void getTemperatureReadings(float& triacTemp, float& externalTemp){
   externalTemp=getCompensatedTemperatureReading(1);
 }
 
+void getTemperatureLimits(float& triacTempLimit, float& externalTempLimit){
+  triacTempLimit=temperatureSensors[0].temperatureLimit;
+  externalTempLimit=temperatureSensors[1].temperatureLimit;
+}
+
+void setTemperatureLimits(int sensorIndex, float tempLimit){
+  if(0==tempLimit){
+    tempLimit=NAN;
+  }
+  temperatureSensors[sensorIndex].temperatureLimit=tempLimit;
+  if(sensorIndex==0){
+    prefs.putFloat(PREFKEY_TEMP_LIMIT0, temperatureSensors[0].temperatureLimit);
+  }
+  else if(sensorIndex==1){
+    prefs.putFloat(PREFKEY_TEMP_LIMIT1, temperatureSensors[1].temperatureLimit);
+  }
+}
+
 bool isTemperatureOverlimit(int sensorIndex){
+  if(temperatureSensors[sensorIndex].temperatureLimit==NAN){
+    return false;
+  }
+
   if(getCompensatedTemperatureReading(sensorIndex)>temperatureSensors[sensorIndex].temperatureLimit){
     return true;
   }
@@ -78,17 +102,18 @@ bool isTemperatureOverlimit(int sensorIndex){
 }
 
 void readTemperatureFromSensors(){
-  bool needToCooldown=false;
   for(int i=0; i<2; i++){
     temperatureSensors[i].temperatureReadingNonCompensated=readTemperature(temperatureSensors[i].gpioPin);
+  }
+}
+
+bool isOverTemperature(){
+  for(int i=0; i<2; i++){
     if(isTemperatureOverlimit(i)){
-      needToCooldown=true;
+      return true;
     }
   }
-
-  if(needToCooldown){
-    
-  }
+  return false;
 }
 
 void setKnownCompensationTemperatureTriac(float knownCurrentTempTriac){
@@ -102,4 +127,9 @@ void initTemperature(){
   Serial.printf("temperatureSensors[0].compensationFactor=%f\n", temperatureSensors[0].compensationFactor);
   temperatureSensors[1].compensationFactor=prefs.getFloat(PREFKEY_TEMP_COMPENSATION_FACTOR1, 1.0);
   Serial.printf("temperatureSensors[1].compensationFactor=%f\n", temperatureSensors[1].compensationFactor);
+
+  temperatureSensors[0].temperatureLimit=prefs.getFloat(PREFKEY_TEMP_LIMIT0, NAN);
+  Serial.printf("temperatureSensors[0].temperatureLimit=%f\n", temperatureSensors[0].temperatureLimit);
+  temperatureSensors[1].temperatureLimit=prefs.getFloat(PREFKEY_TEMP_LIMIT1, NAN);
+  Serial.printf("temperatureSensors[1].temperatureLimit=%f\n", temperatureSensors[1].temperatureLimit);
 }
